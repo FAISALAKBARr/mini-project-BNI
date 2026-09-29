@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface MenuRepository extends JpaRepository<Menu, Long> {
     List<Menu> findByRoleId(Long roleId);
+    boolean existsByRoleId(Long roleId);
 }
 //Spring Data JPA baca nama methodnya dan otomatis bikin query yang sesuai, selama namanya ikut konvensi (findBy + nama field).
