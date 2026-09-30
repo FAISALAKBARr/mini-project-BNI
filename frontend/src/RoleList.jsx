@@ -1,6 +1,15 @@
 import {useEffect, useState} from "react";
-import {data} from "react-router-dom";
 import AddRoleForm from "./AddRoleForm.jsx";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.jsx";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.jsx";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/ui/alert-dialog.jsx";
+import {Button} from "@/components/ui/button.jsx";
 
 function RoleList({ user }) {
     const [roles, setRoles] = useState([]);
@@ -52,37 +61,71 @@ function RoleList({ user }) {
         }
     };
 
-    if (loading) return <p>Memuat data role...</p>;
-    if (error) return <p>{error}</p>;
+    if (loading) return <p className="text-sm text-muted-foreground">Memuat data role...</p>;
+    if (error) return <p className="text-sm text-destructive">{error}</p>;
 
     return (
-        <div>
-            <h2>Data Role</h2>
+        <div className="flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tambah Role</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <AddRoleForm token={user.token} onCreated={handleCreated} />
+                </CardContent>
+            </Card>
 
-            <AddRoleForm token={user.token} onCreated={handleCreated} />
+            {actionError && <p className="text-sm text-destructive">{actionError}</p>}
 
-            {actionError && <p>{actionError}</p>}
-
-            <table border="1" cellPadding="8">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nama Role</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {roles.map((r) => (
-                    <tr key={r.id}>
-                        <td>{r.id}</td>
-                        <td>{r.name}</td>
-                        <td>
-                            <button onClick={() => handleDelete(r)}>Hapus</button>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Data Role</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Nama Role</TableHead>
+                                <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {roles.map((r) => (
+                                <TableRow key={r.id}>
+                                    <TableCell>{r.id}</TableCell>
+                                    <TableCell>{r.name}</TableCell>
+                                    <TableCell className="text-right">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="sm">
+                                                    Hapus
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>
+                                                        Hapus role "{r.name}"?
+                                                    </AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Role tidak bisa dihapus kalau masih dipakai oleh user atau menu.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(r)}>
+                                                        Hapus
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }

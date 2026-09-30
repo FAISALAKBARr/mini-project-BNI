@@ -1,5 +1,15 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+} from "@/components/ui/card";
 
 function Login({onLoginSuccess}) {
     const [username, setUsername] = useState('');
@@ -31,24 +41,39 @@ function Login({onLoginSuccess}) {
         }
     };
     return (
-        <div>
-            <h2>Login</h2>
-            <form onSubmit={handleLogin}>
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit">Login</button>
-            </form>
-            {message && <p>{message}</p>}
+        <div className="flex min-h-svh items-center justify-center bg-muted p-4">
+            <Card className="w-full max-w-sm">
+                <CardHeader>
+                    <CardTitle className="text-2xl">Login</CardTitle>
+                    <CardDescription>Mini Project BNI</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="username">Username</Label>
+                            <Input
+                                id="username"
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                        <Button type="submit" className="w-full">Login</Button>
+                        {message && (
+                            <p className="text-sm text-destructive text-center">{message}</p>
+                        )}
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 }
@@ -64,3 +89,5 @@ export default Login;
 //State berubah => React re-render -> tampilan ikut update. Siklus inilah yang bikin <p> di bawah selalu sinkron sama apa yang kamu ketik
 
 //Ini pola yang disebut controlled input — dan username, password yang tersimpan di state ini persis yang bakal kita kirim ke API login Spring Boot
+
+//Logic-nya (state, handleLogin, fetch) sama persis kayak sebelumnya — yang berubah cuma JSX-nya, dibungkus komponen shadcn.

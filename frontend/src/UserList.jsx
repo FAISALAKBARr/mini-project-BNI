@@ -1,5 +1,16 @@
 import {useState, useEffect} from "react";
 import AddUserForm from "./AddUserForm.jsx";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.jsx";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.jsx";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/ui/alert-dialog.jsx";
+import {Button} from "@/components/ui/button.jsx";
+import {Badge} from "@/components/ui/badge.jsx";
 
 function UserList({ user }) {
     const [users, setUsers] = useState([]);
@@ -58,42 +69,81 @@ function UserList({ user }) {
         }
     };
 
-    if (loading) return <p>Memuat data user...</p>;
-    if (error) return <p>{error}</p>;
+    if (loading) return <p className="text-sm text-muted-foreground">Memuat data user...</p>;
+    if (error) return <p className="text-sm text-destructive">{error}</p>;
 
     return (
-        <div>
-            <h2>Data User</h2>
-            <AddUserForm token={user.token} onCreated={handleCreated}/>
+        <div className="flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tambah User</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <AddUserForm token={user.token} onCreated={handleCreated} />
+                </CardContent>
+            </Card>
 
-            {actionError && <p>{actionError}</p>}
+            {actionError && <p className="text-sm text-destructive">{actionError}</p>}
 
-            <table border="1" cellPadding="8">
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Aksi</th>
-                </tr>
-                </thead>
-                <tbody>
-                {users.map((u) => (
-                    <tr key={u.id}>
-                        <td>{u.id}</td>
-                        <td>{u.username}</td>
-                        <td>{u.role}</td>
-                        <td>
-                            {u.username === user.username ? (
-                                <em>(sedang login)</em>
-                            ) : (
-                                <button onClick={() => handleDelete(u)}>Hapus</button>
-                            )}
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Data User</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Username</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map((u) => (
+                                <TableRow key={u.id}>
+                                    <TableCell>{u.id}</TableCell>
+                                    <TableCell>{u.username}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary">{u.role}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {u.username === user.username ? (
+                                            <span className="text-sm text-muted-foreground italic">
+                                                (sedang login)
+                                            </span>
+                                        ) : (
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="sm">
+                                                        Hapus
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            Hapus user "{u.username}"?
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Tindakan ini tidak bisa dibatalkan. User akan dihapus permanen dari database.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(u)}>
+                                                            Hapus
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -1,13 +1,16 @@
-import {useState} from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function AddRoleForm({ token, onCreated }) {
     const [name, setName] = useState('');
-    const [message, setMassage] = useState('');
+    const [message, setMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMassage('');
+        setMessage('');
         setSubmitting(true);
 
         try {
@@ -22,7 +25,7 @@ function AddRoleForm({ token, onCreated }) {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                setMassage(errorText || 'Gagal menambah role');
+                setMessage(errorText || 'Gagal menambah role');
                 return;
             }
 
@@ -30,25 +33,28 @@ function AddRoleForm({ token, onCreated }) {
             onCreated(created);
             setName('');
         } catch (error) {
-            setMassage('Tidak bisa terhubung ke server');
+            setMessage('Tidak bisa terhubung ke server');
         } finally {
             setSubmitting(false);
         }
     };
 
-    return(
-        <form onSubmit={handleSubmit}>
-            <h3>Tambah Role</h3>
-            <input
-                type="text"
-                placeholder="Nama role (contoh: SUPERVISOR)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-            />
-            <button type="submit" disabled={submitting}>
+    return (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="new-role-name">Nama Role</Label>
+                <Input
+                    id="new-role-name"
+                    type="text"
+                    placeholder="Contoh: SUPERVISOR"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+            </div>
+            <Button type="submit" disabled={submitting}>
                 {submitting ? 'Menyimpan...' : 'Tambah'}
-            </button>
-            {message && <p>{message}</p>}
+            </Button>
+            {message && <p className="text-sm text-destructive basis-full">{message}</p>}
         </form>
     );
 }

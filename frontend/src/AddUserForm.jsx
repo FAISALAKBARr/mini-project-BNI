@@ -1,5 +1,8 @@
 import {useEffect, useState} from "react";
-import {data} from "react-router-dom";
+import {Label} from "@/components/ui/label.jsx";
+import {Input} from "@/components/ui/input.jsx";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.jsx";
+import {Button} from "@/components/ui/button.jsx";
 
 function AddUserForm({ token, onCreated}) {
     const [username, setUsername] = useState('');
@@ -53,31 +56,45 @@ function AddUserForm({ token, onCreated}) {
     };
 
     return(
-        <form onSubmit={handleSubmit}>
-            <h3>Tambah User</h3>
-            <input
-                type="text"
-                placeholder="Username"
-                autoComplete="off"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Password (min. 6 karakter)"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-                {roles.map((r) => (
-                    <option key={r.id} value={r.name}>{r.name}</option>
-                ))}
-            </select>
-            <button type="submit" disabled={submitting || roles.length === 0}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex flex-col gap-2">
+                <Label htmlFor="new-username">Username</Label>
+                <Input
+                    id="new-username"
+                    type="text"
+                    autoComplete="off"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
+            </div>
+            <div className="flex flex-col gap-2">
+                <Label htmlFor="new-password">Password</Label>
+                <Input
+                    id="new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Min. 6 karakter"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+            <div className="flex flex-col gap-2">
+                <Label>Role</Label>
+                <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Pilih role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roles.map((r) => (
+                            <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <Button type="submit" disabled={submitting || roles.length === 0}>
                 {submitting ? 'Menyimpan...' : 'Tambah'}
-            </button>
-            {message && <p>{message}</p>}
+            </Button>
+            {message && <p className="text-sm text-destructive basis-full">{message}</p>}
         </form>
     );
 }
