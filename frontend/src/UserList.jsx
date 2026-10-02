@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog.jsx";
 import {Button} from "@/components/ui/button.jsx";
 import {Badge} from "@/components/ui/badge.jsx";
+import EditUserDialog from "@/EditUserDialog.jsx";
 
 function UserList({ user }) {
     const [users, setUsers] = useState([]);
@@ -45,6 +46,10 @@ function UserList({ user }) {
 
     const handleCreated = (created) => {
         setUsers((prev) => [...prev, created]);
+    };
+
+    const handleUpdated = (updated) => {
+        setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     };
 
     const handleDelete = async (target) => {
@@ -108,35 +113,34 @@ function UserList({ user }) {
                                         <Badge variant="secondary">{u.role}</Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {u.username === user.username ? (
-                                            <span className="text-sm text-muted-foreground italic">
-                                                (sedang login)
-                                            </span>
-                                        ) : (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="sm">
-                                                        Hapus
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>
-                                                            Hapus user "{u.username}"?
-                                                        </AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Tindakan ini tidak bisa dibatalkan. User akan dihapus permanen dari database.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(u)}>
-                                                            Hapus
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        )}
+                                        <div className="flex items-center justify-end gap-2">
+                                            <EditUserDialog targetUser={u} currentUsername={user.username} token={user.token} onUpdated={handleUpdated} />
+                                            {u.username === user.username ? (
+                                                <span className="text-sm text-muted-foreground italic">
+                                                    (sedang login)
+                                                </span>
+                                            ) : (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger render={<Button variant="destructive" size="sm">Hapus</Button>}/>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>
+                                                                Hapus user "{u.username}"?
+                                                            </AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Tindakan ini tidak bisa dibatalkan. User akan dihapus permanen dari database.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(u)}>
+                                                                Hapus
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

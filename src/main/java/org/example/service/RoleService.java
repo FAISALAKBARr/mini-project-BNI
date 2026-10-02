@@ -43,6 +43,25 @@ public class RoleService {
         return roleRepository.save(role);
     }
 
+    public Role updateRole(Long id, CreateRoleRequest request) {
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Role tidak ditemukan"));
+        String name = request.getName() == null ? "" : request.getName().trim().toUpperCase();
+
+        if (name.length() < 3){
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Nama role minimal 3 karakter");
+        }
+
+        roleRepository.findByName(name).ifPresent(existing -> {
+            if (!existing.getId().equals(id)) {
+                throw new ApiException(HttpStatus.CONFLICT,"Role sudah ada");
+            }
+        });
+
+        role.setName(name);
+        return roleRepository.save(role);
+    }
+
     public void deleteRole(Long id) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Role tidak ditemukan"));
@@ -59,3 +78,4 @@ public class RoleService {
 }
 
 //.toUpperCase() supaya nama role konsisten dengan ADMIN/STAFF yang sudah ada, apa pun huruf besar-kecil yang diketik di form nanti.
+// beda dari createRole, di sini harus mengecualikan dirinya sendiri — kalau nggak, coba simpan ulang role yang sama persis tanpa ganti nama bakal selalu dianggap "duplikat", padahal itu role yang sedang diedit.

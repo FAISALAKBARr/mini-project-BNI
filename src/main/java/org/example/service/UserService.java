@@ -1,6 +1,7 @@
 package org.example.service;
 
 import org.example.dto.CreateUserRequest;
+import org.example.dto.UpdateUserRequest;
 import org.example.dto.UserDTO;
 import org.example.entity.Role;
 import org.example.entity.User;
@@ -23,6 +24,7 @@ public class UserService {
 
     @Autowired
     private RoleRepository roleRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -66,6 +68,50 @@ public class UserService {
         User saved = userRepository.save(user);
         return new UserDTO(saved.getId(), saved.getUsername(), role.getName());
     }
+
+    public UserDTO updateUser(Long id, UpdateUserRequest request, String currentUsername){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User tidak ditemukan"));
+
+        boolean isSelf = user.getUsername().equals(currentUsername);
+
+        String newUsername = request.getUsername() == null ? "" : request.getUsername().trim();
+        if (newUsername.length() < 3) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Username minimal 3 karakter");
+        }
+        if (!newUsername.equals(user.getUsername())) {
+            userRepository.findByUsername(newUsername).ifPresent(existing -> {
+                if (!existing.getId().equals(id)) {
+                    throw new ApiException(HttpStatus.CONFLICT, "Username sudah dipakai");
+                }
+            });
+        }
+
+        String roleName = request.getRole() == null ? "" : request.getRole().trim();
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Role tidak ditemukan"));
+
+        if (isSelf && !role.getName().equals(user.getRole().getName())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Tidak bisa mengubah role akun yang sedang dipakai login");
+        }
+
+        user.setUsername(newUsername);
+        user.setRole(role);
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()){
+            if (request.getPassword().length() < 6){
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Password minimal 6 karakter");
+            }
+
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        User saved = userRepository.save(user);
+        return new UserDTO(saved.getId(), saved.getUsername(), role.getName());
+    }
+    //isSelf sengaja dihitung di baris paling awal, sebelum user.setUsername(...) dipanggil — supaya perbandingannya selalu memakai username asli target sebelum diedit dalam request ini, dibandingkan dengan username di token (currentUsername). Kalau dihitung belakangan, perbandingan itu bisa salah pas kasusnya justru "ganti username milik sendiri".
+    //
+    //Pengecekan keunikan (userRepository.findByUsername(...).ifPresent(...)) pakai pola yang sama persis dengan yang sudah kita bikin buat edit nama Role kemarin — nyari dulu, kalau ketemu tapi ID-nya beda, baru dianggap bentrok.
 
     public void deleteUser(Long id, String currentUsername) {
         User target = userRepository.findById(id)

@@ -28,6 +28,11 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PutMapping("/{id}")
+    public Role updateRole(@PathVariable Long id, @RequestBody CreateRoleRequest request) {
+        return roleService.updateRole(id, request);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRole(@PathVariable Long id){
         roleService.deleteRole(id);

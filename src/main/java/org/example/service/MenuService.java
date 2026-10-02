@@ -3,9 +3,11 @@ package org.example.service;
 import org.example.dto.MenuDTO;
 import org.example.entity.Menu;
 import org.example.entity.User;
+import org.example.exception.ApiException;
 import org.example.repository.MenuRepository;
 import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +24,7 @@ public class MenuService {
 
     public List<MenuDTO> getMenusForUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Akun tidak ditemukan, silakan login ulang"));
 
         if (user.getRole() == null){
             return List.of();

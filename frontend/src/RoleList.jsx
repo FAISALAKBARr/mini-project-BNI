@@ -10,6 +10,7 @@ import {
     AlertDialogTrigger
 } from "@/components/ui/alert-dialog.jsx";
 import {Button} from "@/components/ui/button.jsx";
+import EditRoleDialog from "@/EditRoleDialog.jsx";
 
 function RoleList({ user }) {
     const [roles, setRoles] = useState([]);
@@ -37,6 +38,10 @@ function RoleList({ user }) {
 
     const handleCreated = (created) => {
         setRoles((prev) => [...prev, created]);
+    };
+
+    const handleUpdated = (updated) => {
+        setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     };
 
     const handleDelete = async (target) => {
@@ -96,29 +101,28 @@ function RoleList({ user }) {
                                     <TableCell>{r.id}</TableCell>
                                     <TableCell>{r.name}</TableCell>
                                     <TableCell className="text-right">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="sm">
-                                                    Hapus
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        Hapus role "{r.name}"?
-                                                    </AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Role tidak bisa dihapus kalau masih dipakai oleh user atau menu.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(r)}>
-                                                        Hapus
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <div className="flex justify-end gap-2">
+                                            <EditRoleDialog role={r} token={user.token} onUpdated={handleUpdated} />
+                                            <AlertDialog>
+                                                <AlertDialogTrigger render={<Button variant="destructive" size="sm">Hapus</Button>}/>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            Hapus role "{r.name}"?
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Role tidak bisa dihapus kalau masih dipakai oleh user atau menu.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(r)}>
+                                                            Hapus
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

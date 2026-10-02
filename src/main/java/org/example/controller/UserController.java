@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import org.example.dto.CreateUserRequest;
+import org.example.dto.UpdateUserRequest;
 import org.example.dto.UserDTO;
 import org.example.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,11 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PutMapping("/{id}")
+    public UserDTO updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest request, Authentication authentication) {
+        return userService.updateUser(id, request, authentication.getName());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id, Authentication authentication) {
         userService.deleteUser(id, authentication.getName());
@@ -38,3 +44,4 @@ public class UserController {
 
 //SecurityConfig tidak perlu diubah: aturan hasRole("ADMIN") untuk /api/users/**
 //berlaku untuk semua method, dan daftar method CORS sudah memuat POST dan DELETE.
+// PUT sudah ada di daftar method CORS sejak awal (walau belum kepakai sampai sekarang), dan aturan hasRole("ADMIN") untuk /api/users/**//api/roles/** berlaku untuk method apapun, bukan cuma yang sudah pernah dipakai.

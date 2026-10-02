@@ -4,8 +4,10 @@ import org.example.config.JwtUtil;
 import org.example.dto.LoginRequest;
 import org.example.dto.LoginResponse;
 import org.example.entity.User;
+import org.example.exception.ApiException;
 import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +29,7 @@ public class AuthService {
         Optional<User> userOpt =userRepository.findByUsername(request.getUsername());
 
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Username tidak ditemukan");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Username tidak ditemukan");
         }
 
         User user = userOpt.get();
@@ -38,7 +40,7 @@ public class AuthService {
 //        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Password salah");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Password salah");
         }
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().getName());

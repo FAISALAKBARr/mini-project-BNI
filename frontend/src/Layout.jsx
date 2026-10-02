@@ -17,6 +17,7 @@ import {
     SidebarMenuButton,
     SidebarInset,
     SidebarTrigger,
+    useSidebar,
 } from "@/components/ui/sidebar";
 import {LoaderIcon} from "lucide-react";
 import {cn} from "cn";
@@ -32,6 +33,21 @@ function Spinner({ className, ...props }) {
             {...props}
         />
     );
+}
+
+// Komponen kecil terpisah, khusus supaya bisa manggil useSidebar().
+// Hook ini cuma boleh dipanggil DI DALAM <SidebarProvider> -- bukan langsung
+// di Layout, karena Layout sendiri yang merender SidebarProvider-nya.
+function MobileSidebarReset() {
+    const { isMobile, setOpenMobile } = useSidebar();
+
+    useEffect(() => {
+        if (!isMobile) {
+            setOpenMobile(false);
+        }
+    }, [isMobile, setOpenMobile]);
+
+    return null;
 }
 
 function Layout({ user, onLogout }) {
@@ -72,6 +88,7 @@ function Layout({ user, onLogout }) {
 
     return (
         <SidebarProvider>
+            <MobileSidebarReset />
             <Sidebar>
                 <SidebarHeader className="p-4">
                     <div className="flex items-center gap-2">
