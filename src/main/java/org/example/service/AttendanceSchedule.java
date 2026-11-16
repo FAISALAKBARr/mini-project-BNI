@@ -1,17 +1,17 @@
-package org.example.attendence;
+package org.example.service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-public class AttendenceSchedule {
+public class AttendanceSchedule {
     private final LocalTime startWeekday;
     private final LocalTime startFriday;
     private final int openBeforeMinutes;
     private final int toleranceMinutes;
     private final LocalTime cheOutOpensAt;
 
-    public AttendenceSchedule(LocalTime startWeekday, LocalTime startFriday, int openBeforeMinutes, int toleranceMinutes, LocalTime cheOutOpensAt){
+    public AttendanceSchedule(LocalTime startWeekday, LocalTime startFriday, int openBeforeMinutes, int toleranceMinutes, LocalTime cheOutOpensAt){
         this.startWeekday = startWeekday;
         this.startFriday = startFriday;
         this.openBeforeMinutes = openBeforeMinutes;

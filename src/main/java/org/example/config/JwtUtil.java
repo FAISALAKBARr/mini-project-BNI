@@ -13,13 +13,13 @@ import java.util.Date;
 public class JwtUtil {
 
     @Value("${jwt.secret}")
-    private String secretKeyString;
+    private String secretKeyString; //JWT membutuhkan secret key untuk membuat dan memverifikasi tanda tangan digital token.
 
     private static final long EXPIRATION_MS = 1000 * 60 * 60; //1 jam
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secretKeyString.getBytes());
-    }
+    } //mengubah String menjadi array byte.
 
     public String generateToken(String username, String role) {
         return Jwts.builder()

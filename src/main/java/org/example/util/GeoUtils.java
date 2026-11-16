@@ -1,4 +1,4 @@
-package org.example.attendence;
+package org.example.util;
 
 public class GeoUtils {
     private static final double EARTH_RADIUS_METERS = 6_371_000.0;
