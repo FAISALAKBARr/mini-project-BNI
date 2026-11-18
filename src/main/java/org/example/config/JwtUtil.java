@@ -23,12 +23,12 @@ public class JwtUtil {
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
-                .setSubject(username)
-                .claim("role", role)
-                .setIssuedAt(new Date())
+                .setSubject(username) //default subject claim standar JWT
+                .claim("role", role) // subject claim tambahan yang didefinisikan sendiri pake "claim"
+                .setIssuedAt(new Date()) // Waktu ketika token dibuat. new Date() menghasil objek tanggal dan waktu bray.
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(getSigningKey())
-                .compact();
+                .signWith(getSigningKey()) //Memberikan tanda tangan digital pada token menggunakan secret key.
+                .compact(); // Menyelesaikan proses pembuatan JWT dan menghasilkan token (String).
     }
 
     public boolean isTokenValid(String token) {
@@ -42,7 +42,7 @@ public class JwtUtil {
 
     public String extractUsername(String token) {
         return extractClaims(token).getSubject();
-    }
+    } //ambil username yang disimpan dalam JWT
 
     public String extractRole(String token){
         return extractClaims(token).get("role", String.class);
@@ -50,5 +50,5 @@ public class JwtUtil {
 
     private Claims extractClaims(String token) {
         return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
-    }
+    } //helper untuk mengambil seluruh payload JWT setelah token berhasil diparse dan diverifikasi.
 }

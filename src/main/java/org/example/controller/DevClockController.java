@@ -5,10 +5,7 @@ import org.example.config.SettableClock;
 import org.example.exception.ApiException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -35,6 +32,12 @@ public class DevClockController {
         } catch (DateTimeParseException e){
             throw new ApiException(HttpStatus.BAD_REQUEST, "Format harus yyyy-MM-ddTHH:mm:ss, contoh 2026-10-05T08:10:00");
         }
+        return currentTime();
+    }
+
+    @DeleteMapping
+    public Map<String, String> resetClock() {
+        clock.reset();
         return currentTime();
     }
 
