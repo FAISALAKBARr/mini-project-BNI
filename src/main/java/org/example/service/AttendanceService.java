@@ -1,10 +1,11 @@
 package org.example.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.config.AttendanceProperties;
 import org.example.dto.AttendanceCheckRequest;
 import org.example.dto.AttendanceDTO;
+import org.example.dto.AttendanceHistoryResponse;
+import org.example.dto.AttendanceTodayDTO;
 import org.example.entity.Attendance;
 import org.example.entity.CheckInStatus;
 import org.example.entity.User;
@@ -13,19 +14,26 @@ import org.example.repository.AttendanceRepository;
 import org.example.repository.UserRepository;
 import org.example.util.GeoUtils;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-
-import static org.apache.catalina.manager.StatusTransformer.formatTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AttendanceService {
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int MAX_RANGE_DAYS = 366;
+    private static final int MAX_PAGE_SIZE = 100;
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
     private final AttendanceProperties props;
@@ -38,18 +46,22 @@ public class AttendanceService {
         ZonedDateTime now = ZonedDateTime.now(clock);
         LocalDate today = now.toLocalDate();
         LocalTime time = now.toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+        String blocked = checkInBlockedReason(today, time);
 
-        if (!schedule.isWorkday(today)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, " Hari ini bukan hari kerja");
+        if (blocked != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, blocked);
         }
-        LocalTime opensAt = schedule.checkInOpensAt(today);
-        if (time.isBefore(opensAt)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Check-in belum dibuka. Mulai pukul " + opensAt.format(HH_MM));
-        }
-        LocalTime closesAt = LocalTime.parse(props.getCheckin().getCloseTime());
-        if (!time.isBefore(closesAt)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Check-in sudah ditutup (setelah pukul "+ closesAt.format(HH_MM) + ")");
-        }
+//        if (!schedule.isWorkday(today)) {
+//            throw new ApiException(HttpStatus.BAD_REQUEST, " Hari ini bukan hari kerja");
+//        }
+//        LocalTime opensAt = schedule.checkInOpensAt(today);
+//        if (time.isBefore(opensAt)) {
+//            throw new ApiException(HttpStatus.BAD_REQUEST, "Check-in belum dibuka. Mulai pukul " + opensAt.format(HH_MM));
+//        }
+//        LocalTime closesAt = LocalTime.parse(props.getCheckin().getCloseTime());
+//        if (!time.isBefore(closesAt)) {
+//            throw new ApiException(HttpStatus.BAD_REQUEST, "Check-in sudah ditutup (setelah pukul "+ closesAt.format(HH_MM) + ")");
+//        }
         if (attendanceRepository.findByUserIdAndWorkDate(user.getId(), today).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "Kamu sudah check-in hari ini");
         }
@@ -63,7 +75,7 @@ public class AttendanceService {
         attendance.setCheckInLat(request.getLatitude());
         attendance.setCheckInLng(request.getLongitude());
         attendance.setCheckInDistanceM(distance);
-        attendance.setCheckInStatus(time.isAfter(schedule.laterAfter(today)) ? CheckInStatus.LATE : CheckInStatus.ON_TIME);
+        attendance.setCheckInStatus(time.isAfter(schedule.lateAfter(today)) ? CheckInStatus.LATE : CheckInStatus.ON_TIME);
 
         Attendance saved;
         try {
@@ -103,6 +115,111 @@ public class AttendanceService {
         attendance.setWorkMinutes((int) Math.max(0, minutes));
 
         return toDto (attendanceRepository.save(attendance));
+    }
+
+    // Dipakai checkIn() untuk menolak, dan getToday() untuk menyalakan tombol. Null berarti boleh.
+    private String checkInBlockedReason(LocalDate today, LocalTime time) {
+        if (!schedule.isWorkday(today)) {
+            return "Hari ini bukan hari kerja";
+        }
+        LocalTime opensAt = schedule.checkInOpensAt(today);
+        if (time.isBefore(opensAt)) {
+            return "Check-in belum dibuka. Mulai pukul " + opensAt.format(HH_MM);
+        }
+        if (!time.isBefore(schedule.checkOutOpensAt())) {
+            return "Check-in sudah ditutup (setelah pukul " + schedule.checkOutOpensAt().format(HH_MM) + ")";
+        }
+        return null;
+    }
+
+    @Transactional(readOnly = true)
+    public AttendanceTodayDTO getToday(String username) {
+        User user = findUser(username);
+        ZonedDateTime now = ZonedDateTime.now(clock);
+        LocalDate today = now.toLocalDate();
+        LocalTime time = now.toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+
+        boolean workday = schedule.isWorkday(today);
+        Attendance todayRecord = attendanceRepository.findByUserIdAndWorkDate(user.getId(), today).orElse(null);
+
+        boolean canCheckIn = todayRecord == null && checkInBlockedReason(today, time) == null;
+        boolean canCheckOut = todayRecord != null
+                && todayRecord.getCheckOutAt() == null
+                && !time.isBefore(schedule.checkOutOpensAt());
+
+        String hint;
+        if (todayRecord == null){
+            hint = checkInBlockedReason(today, time);
+        } else if (todayRecord.getCheckOutAt() != null) {
+            hint = "Absensi hari ini sudah selesai";
+        } else if (!canCheckOut) {
+            hint = "Check-out mulai pukul " + schedule.checkOutOpensAt().format(HH_MM);
+        } else {
+            hint = null;
+        }
+
+        return new AttendanceTodayDTO(
+                now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                today.toString(),
+                workday,
+                workday ? schedule.officialStart(today).format(HH_MM) : null,
+                workday ? schedule.checkInOpensAt(today).format(HH_MM) : null,
+                workday ? schedule.lateAfter(today).format(HH_MM) : null,
+                schedule.checkOutOpensAt().format(HH_MM),
+                canCheckIn,
+                canCheckOut,
+                hint,
+                props.getOffice().getLatitude(),
+                props.getOffice().getLongitude(),
+                (int) Math.round(props.getOffice().getRadiusMeters()),
+                todayRecord == null ? null : toDto(todayRecord)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AttendanceHistoryResponse getMyHistory(String username, LocalDate from, LocalDate to, int page, int size) {
+        User user = findUser(username);
+        return query(user.getId(), from, to, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public AttendanceHistoryResponse getAllHistory(Long userId, LocalDate from, LocalDate to, int page, int size) {
+        return query(userId, from, to, page, size);
+    }
+
+    // userId null = semua pegawai
+    private AttendanceHistoryResponse query(Long userId, LocalDate from, LocalDate to, int page, int size){
+        LocalDate end = to != null ? to : LocalDate.now(clock);
+        LocalDate start = from != null ? from : end.minusDays(29);
+
+        if (end.isBefore(start)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Tanggal akhir tidak boleh sebelum tanggal awal");
+        }
+
+        if (ChronoUnit.DAYS.between(start, end) > MAX_RANGE_DAYS) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Rentang tanggal maksimal " + MAX_RANGE_DAYS + " hari per pencarian");
+        }
+
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by(Sort.Order.desc("workDate"), Sort.Order.asc("checkInAt")));
+
+        Page<Attendance> result = (userId == null)
+                ? attendanceRepository.findByWorkDateBetween(start, end, pageable)
+                : attendanceRepository.findByUserIdAndWorkDateBetween(userId, start, end, pageable);
+
+        Long total = (userId == null)
+                ? attendanceRepository.sumWorkMinutes(start, end)
+                : attendanceRepository.sumWorkMinutesByUser(userId, start, end);
+
+        List<AttendanceDTO> content = result.getContent().stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return new AttendanceHistoryResponse(content, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages(), total == null ? 0 : total);
     }
 
     private int validateLocation(AttendanceCheckRequest request){

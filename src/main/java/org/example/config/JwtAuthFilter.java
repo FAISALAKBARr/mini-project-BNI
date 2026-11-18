@@ -15,7 +15,7 @@ import java.util.List;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil; //Membuat variabel untuk menyimpan objek JwtUtil.
 
     public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;

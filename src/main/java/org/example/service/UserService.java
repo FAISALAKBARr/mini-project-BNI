@@ -6,6 +6,7 @@ import org.example.dto.UserDTO;
 import org.example.entity.Role;
 import org.example.entity.User;
 import org.example.exception.ApiException;
+import org.example.repository.AttendanceRepository;
 import org.example.repository.RoleRepository;
 import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
 
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
@@ -118,6 +122,11 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User tidak ditemukan"));
         if (target.getUsername().equals(currentUsername)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Tidak bisa menghapus akun yang sedang dipakai login");
+        }
+
+        if (attendanceRepository.existsByUserId(id)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "User punya riwayat absensi, tidak bisa dihapus");
         }
 
         userRepository.delete(target);

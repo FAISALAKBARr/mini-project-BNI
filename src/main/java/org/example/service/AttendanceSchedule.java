@@ -32,7 +32,7 @@ public class AttendanceSchedule {
         return officialStart(date).minusMinutes(openBeforeMinutes);
     }
 
-    public LocalTime laterAfter(LocalDate date){
+    public LocalTime lateAfter(LocalDate date){
         return officialStart(date).plusMinutes(toleranceMinutes);
     }
 
