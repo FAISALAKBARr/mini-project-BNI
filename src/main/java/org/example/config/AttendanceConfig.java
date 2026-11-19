@@ -21,9 +21,10 @@ public class AttendanceConfig {
         return new AttendanceSchedule(
                 LocalTime.parse(checkin.getStartWeekday()),
                 LocalTime.parse(checkin.getStartFriday()),
-                checkin.getOpenBeforeMinutes(),
+                LocalTime.parse(checkin.getOpensAt()),
                 checkin.getToleranceMinutes(),
-                LocalTime.parse(props.getCheckout().getEarliestTime())
+                LocalTime.parse(props.getCheckout().getEarliestTime()),
+                LocalTime.parse(props.getWorkStartTime())
         );
     }
 }

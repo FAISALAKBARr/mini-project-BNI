@@ -13,6 +13,7 @@ public class AttendanceTodayDTO {
     private String checkInOpensAt;
     private String lateAfter;
     private String checkOutOpensAt;
+    private String workStartTime;      // "07:30", untuk teks "jam kerja dihitung mulai ..."
     private boolean canCheckIn;       // menurut jam dan status. Lokasi dicek terpisah
     private boolean canCheckOut;
     private String hint;              // alasan tombol mati, atau null

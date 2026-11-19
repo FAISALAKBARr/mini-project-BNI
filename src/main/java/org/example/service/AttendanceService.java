@@ -87,7 +87,8 @@ public class AttendanceService {
         return toDto(saved);
     }
 
-    public AttendanceDTO checkOut(String username, AttendanceCheckRequest request){
+    @Transactional
+    public AttendanceDTO checkOut(String username, AttendanceCheckRequest request) {
         User user = findUser(username);
         ZonedDateTime now = ZonedDateTime.now(clock);
         LocalDate today = now.toLocalDate();
@@ -95,9 +96,7 @@ public class AttendanceService {
 
         Attendance attendance = attendanceRepository.findByUserIdAndWorkDate(user.getId(), today)
                 .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "Kamu belum check-in hari ini"));
-        if (attendance.getCheckOutAt() != null){
-            throw new ApiException(HttpStatus.CONFLICT, "Kamu sudah chek-out hari ini");
-        }
+
         LocalTime opensAt = schedule.checkOutOpensAt();
         if (time.isBefore(opensAt)) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
@@ -106,15 +105,16 @@ public class AttendanceService {
 
         int distance = validateLocation(request);
 
+        // Boleh diulang sampai pergantian hari. Yang tersimpan adalah check-out terakhir.
         Instant checkOutAt = now.toInstant();
         attendance.setCheckOutAt(checkOutAt);
         attendance.setCheckOutLat(request.getLatitude());
         attendance.setCheckOutLng(request.getLongitude());
         attendance.setCheckOutDistanceM(distance);
-        long minutes = Duration.between(attendance.getCheckInAt(), checkOutAt).toMinutes();
-        attendance.setWorkMinutes((int) Math.max(0, minutes));
+        attendance.setWorkMinutes((int) schedule.workMinutes(
+                toLocal(attendance.getCheckInAt()), toLocal(checkOutAt)));
 
-        return toDto (attendanceRepository.save(attendance));
+        return toDto(attendanceRepository.save(attendance));
     }
 
     // Dipakai checkIn() untuk menolak, dan getToday() untuk menyalakan tombol. Null berarti boleh.
@@ -143,17 +143,16 @@ public class AttendanceService {
         Attendance todayRecord = attendanceRepository.findByUserIdAndWorkDate(user.getId(), today).orElse(null);
 
         boolean canCheckIn = todayRecord == null && checkInBlockedReason(today, time) == null;
-        boolean canCheckOut = todayRecord != null
-                && todayRecord.getCheckOutAt() == null
-                && !time.isBefore(schedule.checkOutOpensAt());
+        boolean canCheckOut = todayRecord != null && !time.isBefore(schedule.checkOutOpensAt());
 
         String hint;
-        if (todayRecord == null){
+        if (todayRecord == null) {
             hint = checkInBlockedReason(today, time);
-        } else if (todayRecord.getCheckOutAt() != null) {
-            hint = "Absensi hari ini sudah selesai";
         } else if (!canCheckOut) {
             hint = "Check-out mulai pukul " + schedule.checkOutOpensAt().format(HH_MM);
+        } else if (todayRecord.getCheckOutAt() != null) {
+            hint = "Check-out terakhir pukul " + todayRecord.getCheckOutAt().atZone(clock.getZone()).format(HH_MM)
+                    + ". Masih bisa diperbarui sampai tengah malam";
         } else {
             hint = null;
         }
@@ -166,6 +165,7 @@ public class AttendanceService {
                 workday ? schedule.checkInOpensAt(today).format(HH_MM) : null,
                 workday ? schedule.lateAfter(today).format(HH_MM) : null,
                 schedule.checkOutOpensAt().format(HH_MM),
+                schedule.workStartTime().format(HH_MM),
                 canCheckIn,
                 canCheckOut,
                 hint,
@@ -254,19 +254,26 @@ public class AttendanceService {
     }
 
     private AttendanceDTO toDto(Attendance a) {
+        LocalDateTime checkInLocal = toLocal(a.getCheckInAt());
         return new AttendanceDTO(
                 a.getId(),
                 a.getUser().getId(),
                 a.getUser().getUsername(),
                 a.getWorkDate().toString(),
                 formatTime(a.getCheckInAt()),
+                schedule.countedStart(checkInLocal).atZone(clock.getZone())
+                        .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 a.getCheckInStatus().name(),
                 a.getCheckInDistanceM(),
                 formatTime(a.getCheckOutAt()),
                 a.getCheckOutDistanceM(),
-                a.getWorkMinutes()
-        );
+                a.getWorkMinutes());
     }
+
+    private LocalDateTime toLocal(Instant instant) {
+        return instant.atZone(clock.getZone()).toLocalDateTime();
+    }
+
     private String formatTime(Instant instant){
         return instant == null ? null
                 : instant.atZone(clock.getZone()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);

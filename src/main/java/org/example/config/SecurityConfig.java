@@ -21,27 +21,27 @@ public class SecurityConfig {
 
     public SecurityConfig(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-    }
+    } //constructor injection
 
-    @Bean
+    @Bean //mendefinisikan bean PasswordEncoder.
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
+    @Bean // @Bean berarti objek yang dikembalikan oleh method ini akan didaftarkan ke Spring Application Context sehingga dapat digunakan oleh class lain melalui Dependency Injection.
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource(); // objek kanggo menghubungkan konfigurasi CORS pola URL.
+        source.registerCorsConfiguration("/**", configuration); //daftarr bos. /** (terapke ning kabeh endpoint)
+        return source; //ben iso dinggo spring security
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception { //mengatur rantai filter keamanan Spring Security
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())

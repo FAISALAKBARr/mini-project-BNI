@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class AttendanceProperties {
     private String timezone = "Asia/Jakarta";
     private double maxAccuracyMeters =300;
+    private String workStartTime = "07:30";
     private Office office = new Office();
     private Checkin checkin = new Checkin();
     private Checkout checkout = new Checkout();
@@ -29,7 +30,7 @@ public class AttendanceProperties {
     public static class Checkin{
         private String startWeekday = "08:00";
         private String startFriday = "07:30";
-        private int openBeforeMinutes = 0;
+        private String opensAt = "00:01";
         private int toleranceMinutes = 30;
         private String closeTime = "11.00";
     }
