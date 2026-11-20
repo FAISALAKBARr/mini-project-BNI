@@ -6,6 +6,7 @@ import Dashboard from "./Dashboard.jsx";
 import UserList from "./UserList.jsx";
 import RoleList from "./RoleList.jsx";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.jsx";
+import Attendance from "@/Attendance.jsx";
 
 // function Greeting({ name }){
 //   return <h2>Halo, {name}</h2>
@@ -55,6 +56,7 @@ function App(){
               <Route path="/master/user" element={<UserList user={user} />} />
               <Route path="/master/role" element={<RoleList user={user} />} />
               <Route path="/transaksi" element={<Placeholder title="Transaksi" />} />
+              <Route path="/absensi" element={<Attendance user={user} />} />
           </Route>
 
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />

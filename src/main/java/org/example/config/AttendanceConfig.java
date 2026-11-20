@@ -23,7 +23,7 @@ public class AttendanceConfig {
                 LocalTime.parse(checkin.getStartFriday()),
                 LocalTime.parse(checkin.getOpensAt()),
                 checkin.getToleranceMinutes(),
-                LocalTime.parse(props.getCheckout().getEarliestTime()),
+                LocalTime.parse(checkin.getCloseTime()),
                 LocalTime.parse(props.getWorkStartTime())
         );
     }

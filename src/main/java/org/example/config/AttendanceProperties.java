@@ -15,7 +15,6 @@ public class AttendanceProperties {
     private String workStartTime = "07:30";
     private Office office = new Office();
     private Checkin checkin = new Checkin();
-    private Checkout checkout = new Checkout();
 
     @Getter
     @Setter
@@ -32,12 +31,7 @@ public class AttendanceProperties {
         private String startFriday = "07:30";
         private String opensAt = "00:01";
         private int toleranceMinutes = 30;
-        private String closeTime = "11.00";
+        private String closeTime = "17.00";
     }
 
-    @Getter
-    @Setter
-    public static class Checkout{
-        private String earliestTime = "17:00";
-    }
 }

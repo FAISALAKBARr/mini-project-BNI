@@ -92,20 +92,13 @@ public class AttendanceService {
         User user = findUser(username);
         ZonedDateTime now = ZonedDateTime.now(clock);
         LocalDate today = now.toLocalDate();
-        LocalTime time = now.toLocalTime().truncatedTo(ChronoUnit.MINUTES);
 
         Attendance attendance = attendanceRepository.findByUserIdAndWorkDate(user.getId(), today)
                 .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "Kamu belum check-in hari ini"));
 
-        LocalTime opensAt = schedule.checkOutOpensAt();
-        if (time.isBefore(opensAt)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "Check-out baru dibuka pukul " + opensAt.format(HH_MM));
-        }
-
         int distance = validateLocation(request);
 
-        // Boleh diulang sampai pergantian hari. Yang tersimpan adalah check-out terakhir.
+        // Boleh kapan saja setelah check-in, dan boleh diulang sampai pergantian hari.
         Instant checkOutAt = now.toInstant();
         attendance.setCheckOutAt(checkOutAt);
         attendance.setCheckOutLat(request.getLatitude());
@@ -126,8 +119,8 @@ public class AttendanceService {
         if (time.isBefore(opensAt)) {
             return "Check-in belum dibuka. Mulai pukul " + opensAt.format(HH_MM);
         }
-        if (!time.isBefore(schedule.checkOutOpensAt())) {
-            return "Check-in sudah ditutup (setelah pukul " + schedule.checkOutOpensAt().format(HH_MM) + ")";
+        if (!time.isBefore(schedule.checkInClosesAt())) {
+            return "Check-in sudah ditutup (setelah pukul " + schedule.checkInClosesAt().format(HH_MM) + ")";
         }
         return null;
     }
@@ -143,13 +136,11 @@ public class AttendanceService {
         Attendance todayRecord = attendanceRepository.findByUserIdAndWorkDate(user.getId(), today).orElse(null);
 
         boolean canCheckIn = todayRecord == null && checkInBlockedReason(today, time) == null;
-        boolean canCheckOut = todayRecord != null && !time.isBefore(schedule.checkOutOpensAt());
+        boolean canCheckOut = todayRecord != null;
 
         String hint;
         if (todayRecord == null) {
             hint = checkInBlockedReason(today, time);
-        } else if (!canCheckOut) {
-            hint = "Check-out mulai pukul " + schedule.checkOutOpensAt().format(HH_MM);
         } else if (todayRecord.getCheckOutAt() != null) {
             hint = "Check-out terakhir pukul " + todayRecord.getCheckOutAt().atZone(clock.getZone()).format(HH_MM)
                     + ". Masih bisa diperbarui sampai tengah malam";
@@ -164,7 +155,7 @@ public class AttendanceService {
                 workday ? schedule.officialStart(today).format(HH_MM) : null,
                 workday ? schedule.checkInOpensAt(today).format(HH_MM) : null,
                 workday ? schedule.lateAfter(today).format(HH_MM) : null,
-                schedule.checkOutOpensAt().format(HH_MM),
+                schedule.checkInClosesAt().format(HH_MM),
                 schedule.workStartTime().format(HH_MM),
                 canCheckIn,
                 canCheckOut,
@@ -172,8 +163,7 @@ public class AttendanceService {
                 props.getOffice().getLatitude(),
                 props.getOffice().getLongitude(),
                 (int) Math.round(props.getOffice().getRadiusMeters()),
-                todayRecord == null ? null : toDto(todayRecord)
-        );
+                todayRecord == null ? null : toDto(todayRecord));
     }
 
     @Transactional(readOnly = true)
